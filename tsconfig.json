@@ -16,6 +16,47 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false
+    "noFallthroughCasesInSwitch": false,
+    "paths": {
+      "@core": [
+        "src/"
+      ],
+      "@core/*": [
+        "src/*"
+      ],
+      "@shared": [
+        "src/shared"
+      ],
+      "@shared/*": [
+        "src/shared/*"
+      ],
+      "@common": [
+        "src/common"
+      ],
+      "@common/*": [
+        "src/common/*"
+      ],
+      "@configs": [
+        "src/configs"
+      ],
+      "@configs/*": [
+        "src/configs/*"
+      ],
+      "@utils": [
+        "src/utils"
+      ],
+      "@utils/*": [
+        "src/utils/*"
+      ],
+      "@typings": [
+        "src/typings"
+      ],
+      "@typings/*": [
+        "src/typings/*"
+      ],
+      "@db": [
+        "generated/prisma"
+      ]
+    }
   }
 }
