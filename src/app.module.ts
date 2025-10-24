@@ -10,8 +10,12 @@ import { RedisModule } from '@shared';
 import { FileModule } from './modules/file/file.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { PugAdapter } from '@nestjs-modules/mailer/dist/adapters/pug.adapter';
+import { EmailsModule } from './shared/alerts/emails/emails.module';
+import { NotificationsModule } from './shared/alerts/notifications/notifications.module';
 import smtpConfig from './configs/smtp.config';
 import * as path from 'path';
+import { BullModule, BullRootModuleOptions } from '@nestjs/bull';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -20,8 +24,17 @@ import * as path from 'path';
       load: [appConfigs, redisConfig, smtpConfig],
       ignoreEnvFile: true,
     }),
-    GlobalModule,
     EventEmitterModule.forRoot(),
+    GlobalModule,
+    BullModule.forRootAsync({
+      imports: [ConfigModule.forFeature(redisConfig)],
+      inject: [redisConfig.KEY],
+      useFactory: (config: ConfigType<typeof redisConfig>): BullRootModuleOptions => {
+        return {
+          url: config.url,
+        };
+      },
+    }),
     MailerModule.forRootAsync({
       inject: [smtpConfig.KEY],
       useFactory: (config: ConfigType<typeof smtpConfig>) => ({
@@ -44,6 +57,9 @@ import * as path from 'path';
     }),
     RedisModule,
     FileModule,
+    EmailsModule,
+    NotificationsModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

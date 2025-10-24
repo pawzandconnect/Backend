@@ -1,21 +1,19 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { S3, S3ClientConfigType } from '@aws-sdk/client-s3';
+import { S3 } from '@aws-sdk/client-s3';
 
 @Injectable()
-export class FileConfig implements OnModuleInit {
-  private fileClient: S3ClientConfigType;
+export class FileConfig {
+  private fileClient: S3;
   private provider: string;
   private bucket: string;
 
-  constructor(private config: ConfigService) {}
-
-  onModuleInit() {
-    this.setFileProviderConfig();
+  constructor(private readonly config: ConfigService) {
+    this.initialize();
   }
 
-  private setFileProviderConfig() {
-    this.provider = this.config.get<string>('FILE_UPLOAD_PROVIDER');
+  private initialize() {
+    this.provider = this.config.get<string>('FILE_UPLOAD_PROVIDER', 'aws-s3');
 
     switch (this.provider) {
       case 'aws-s3':
@@ -31,15 +29,15 @@ export class FileConfig implements OnModuleInit {
         break;
 
       case 'gcp':
-        // Initialize GCP file client here
+        // GCP setup
         break;
 
       case 'cloudinary':
-        // Initialize Cloudinary file client here
+        // Cloudinary setup
         break;
 
       default:
-        throw new Error('Invalid bucket provider');
+        throw new Error(`Invalid file upload provider: ${this.provider}`);
     }
   }
 
@@ -47,11 +45,11 @@ export class FileConfig implements OnModuleInit {
     return this.fileClient;
   }
 
-  getProvider() {
-    return this.provider;
-  }
-
   getBucket() {
     return this.bucket;
+  }
+
+  getProvider() {
+    return this.provider;
   }
 }

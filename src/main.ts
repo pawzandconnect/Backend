@@ -4,12 +4,18 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as basicAuth from 'express-basic-auth';
 import { env } from '@configs';
 import { ResponseInterceptor, GlobalExceptionFilter } from '@common';
+import { VersioningType } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.useGlobalInterceptors(new ResponseInterceptor());
   app.useGlobalFilters(new GlobalExceptionFilter());
+
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: '1',
+  });
 
   app.use(
     ['/docs'],
