@@ -40,7 +40,7 @@ const exceptionConfig = {
   },
   [ExceptionCode.BAD_REQUEST]: {
     message: 'Invalid or wrong parameter(s) provided for this request.',
-    status: 401,
+    status: 400,
   },
   [ExceptionCode.UNPROCESSABLE_ENTITY]: {
     message: "Can't process this request at the moment, please try again later",

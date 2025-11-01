@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaConfig } from '@configs';
-import { FileEntity } from '@utils';
+import * as ffmpeg from 'fluent-ffmpeg';
+import { Readable } from 'stream';
+import { ExceptionFactory, FileEntity } from '@utils';
+import { FileMeta } from '@common/typings';
 
 @Injectable()
 export class FileService {
@@ -11,24 +14,28 @@ export class FileService {
 
   async upload(file: Express.Multer.File, user?) {
     try {
+      this.validateFileType(file.mimetype);
+      const isVideoFile = this.isVideo(file.mimetype);
       const uploadResult = await this.fileEntity.fileUpload(file);
-
       const persitFilePayload = {
         key: uploadResult.Key,
         type: file.mimetype,
         url: uploadResult.Location,
         ...(user && { userId: user.id }),
       };
-
       // Persit file record
       await this.saveFileRecord(persitFilePayload);
 
+      const data: FileMeta = {
+        url: uploadResult.Location,
+        mimeType: file.mimetype,
+        size: file.size,
+        ...(isVideoFile && { duration: await this.getVideoDuration(file.buffer) }),
+      };
+
       return {
         message: 'File uploaded',
-        data: {
-          url: uploadResult.Location,
-          mimetype: file.mimetype,
-        },
+        data,
       };
     } catch (e) {
       throw e;
@@ -39,22 +46,26 @@ export class FileService {
     try {
       const mapUploadResult = await Promise.all(
         files.map(async (file) => {
+          this.validateFileType(file.mimetype);
+          const isVideoFile = this.isVideo(file.mimetype);
           const uploadResult = await this.fileEntity.fileUpload(file);
-
           const persitFilePayload = {
             key: uploadResult.key,
             type: file.mimetype,
             url: uploadResult.Location,
             ...(user && { userId: user.id }),
           };
-
           // Persit file record
           await this.saveFileRecord(persitFilePayload);
 
-          return {
+          const data: FileMeta = {
             url: uploadResult.Location,
-            mimetype: file.mimetype,
+            mimeType: file.mimetype,
+            size: file.size,
+            ...(isVideoFile && { duration: await this.getVideoDuration(file.buffer) }),
           };
+
+          return data;
         }),
       );
 
@@ -83,5 +94,29 @@ export class FileService {
     } catch (e) {
       throw e;
     }
+  }
+
+  private validateFileType(mimetype: string) {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'video/mp4'];
+    if (!allowedTypes.includes(mimetype)) {
+      throw ExceptionFactory.badRequest('Invalid file type');
+    }
+  }
+
+  private async getVideoDuration(fileBuffer: Buffer): Promise<number> {
+    return new Promise((resolve, reject) => {
+      const stream = Readable.from(fileBuffer);
+      ffmpeg(stream).ffprobe((err, metadata) => {
+        if (err) {
+          return reject(err);
+        }
+        const duration = metadata.format.duration; // In seconds
+        resolve(duration);
+      });
+    });
+  }
+
+  private isVideo(mimetype: string): boolean {
+    return mimetype === 'video/mp4';
   }
 }
