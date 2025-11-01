@@ -7,6 +7,7 @@ import {
   PetSpecies,
   ProfileVisibility,
 } from '../../../../generated/prisma/enums';
+import { FileMeta } from '@common/typings';
 
 export class CreatePetRequestDto {
   @ApiProperty({
@@ -35,12 +36,12 @@ export class CreatePetRequestDto {
 
   @ApiProperty({
     example: [
-      { url: 'http://example.com/image1.jpg', mimetype: 'image/webp' },
-      { url: 'http://example.com/video1.mp4', mimetype: 'video/mp4' },
+      { url: 'http://example.com/image1.jpg', mimetype: 'image/webp', size: 102400 },
+      { url: 'http://example.com/video1.mp4', mimetype: 'video/mp4', size: 102400, duration: 5.0 },
     ],
     description: 'An array of media items related to the pet',
   })
-  media: Array<{ url: string; type: string }>;
+  media: Array<FileMeta>;
 
   @ApiProperty({
     example: PetMediaType.image,
