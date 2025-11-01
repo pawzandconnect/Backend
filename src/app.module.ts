@@ -16,6 +16,7 @@ import smtpConfig from './configs/smtp.config';
 import * as path from 'path';
 import { BullModule, BullRootModuleOptions } from '@nestjs/bull';
 import { AuthModule } from './modules/auth/auth.module';
+import { PetModule } from './modules/pet/pet.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { AuthModule } from './modules/auth/auth.module';
     EmailsModule,
     NotificationsModule,
     AuthModule,
+    PetModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -8,6 +8,41 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Enums
+enum ProfileVisibility {
+  public
+  private
+}
+
+enum PetEnergyLevel {
+  low
+  moderate
+  high
+}
+
+enum PetSpecies {
+  dog
+  cat
+  bird
+  other
+}
+
+enum PetSize {
+  small
+  medium
+  large
+}
+
+enum PetGender {
+  male
+  female
+}
+
+enum PetMediaType {
+  image
+  video
+}
+
 model File {
   id        String  @id @default(cuid())
   key       String
@@ -16,8 +51,36 @@ model File {
   url       String?
   type      String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("files")
+}
+
+model PetProfile {
+  id    String @id @default(cuid())
+  name  String
+  breed String
+  age   Int
+  bio   String
+  media Json[]
+
+  media_type PetMediaType
+  species    PetSpecies
+  gender     PetGender
+  size       PetSize
+
+  visibility ProfileVisibility @default(public)
+
+  // Optional fields
+  energy_level           PetEnergyLevel?
+  vaccination_status     String?
+  neutered_status        String?
+  temperament_tags       String[]
+  available_for_adoption Boolean         @default(false)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("pet_profiles")
 }
