@@ -2,7 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { CreatePetRequestDto } from './dto';
 import { PetRepository } from './pet.repository';
 import { PetMediaType } from '../../../generated/prisma/enums';
-import { MAX_PHOTOS, MAX_SIZE_MB, MAX_VIDEO_SIZE_MB } from '@common/constants';
+import {
+  MAX_PHOTO_SIZE,
+  MAX_PHOTOS,
+  MAX_SIZE_MB,
+  MAX_VIDEO_SIZE,
+  MAX_VIDEO_SIZE_MB,
+} from '@common/constants';
 import { ExceptionFactory, ExceptionHandler } from '@utils';
 import { FileMeta } from '@common/typings';
 
@@ -83,7 +89,9 @@ export class PetService {
 
       const oversizedPhotos = media.filter((item) => item.size > MAX_SIZE_MB);
       if (oversizedPhotos.length > 0) {
-        throw ExceptionFactory.badRequest(`Each photo must be less than ${MAX_SIZE_MB}MB in size.`);
+        throw ExceptionFactory.badRequest(
+          `Each photo must be less than ${MAX_PHOTO_SIZE}MB in size.`,
+        );
       }
     } else if (mediaType === PetMediaType.video) {
       const isValidVideoMedia = media.filter((item) => !item.mimeType.startsWith('video/'));
@@ -101,7 +109,7 @@ export class PetService {
       // Expecting only one video
       const video = media[0];
       if (video.size > MAX_VIDEO_SIZE_MB) {
-        throw ExceptionFactory.badRequest(`Video size cannot exceed ${MAX_VIDEO_SIZE_MB}MB.`);
+        throw ExceptionFactory.badRequest(`Video size cannot exceed ${MAX_VIDEO_SIZE}MB.`);
       }
     } else {
       throw ExceptionFactory.badRequest('Invalid media type.');
