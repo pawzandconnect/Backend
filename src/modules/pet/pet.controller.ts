@@ -3,9 +3,10 @@ import { PetService } from './pet.service';
 import { CreatePetRequestDto } from './dto';
 import { CurrentUser, Public } from '@common/decorators';
 import { AuthTokenClaim } from '@common/typings';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 @ApiBearerAuth()
+@ApiTags('Pets')
 @Controller('pets')
 export class PetController {
   constructor(private readonly petService: PetService) {}
@@ -21,7 +22,7 @@ export class PetController {
   }
 
   @Patch(':petId/toggle-visibility')
-  async toggleProfileVisibility(@Body('petId') petId: string) {
+  async toggleProfileVisibility(@Param('petId') petId: string) {
     return this.petService.toggleProfileVisibility(petId);
   }
 

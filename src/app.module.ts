@@ -19,6 +19,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { PetModule } from './modules/pet/pet.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { OwnerModule } from './modules/owner/owner.module';
 
 @Module({
   imports: [
@@ -74,6 +75,7 @@ import { APP_GUARD } from '@nestjs/core';
     NotificationsModule,
     AuthModule,
     PetModule,
+    OwnerModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],

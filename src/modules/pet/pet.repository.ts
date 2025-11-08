@@ -9,7 +9,9 @@ export class PetRepository {
     return this.prisma.petProfile.create({ data });
   }
 
-  async findAll() {}
+  async findAll() {
+    return this.prisma.petProfile.findMany({ orderBy: { createdAt: 'desc' } });
+  }
 
   async findById(id) {
     return this.prisma.petProfile.findUnique({ where: { id } });
