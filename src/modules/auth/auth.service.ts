@@ -6,6 +6,7 @@ import { ExceptionFactory, ExceptionHandler } from '@utils';
 import { firstValueFrom, take } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
+import { AuthResponse, AuthTokenClaim, SignAuthTokenClaim } from '@common/typings';
 
 @Injectable()
 export class AuthService {
@@ -17,7 +18,7 @@ export class AuthService {
     private readonly config: ConfigService,
   ) {}
 
-  async googleSignIn(dto: GoogleSignInDto) {
+  async googleSignIn(dto: GoogleSignInDto): Promise<AuthResponse> {
     const { token } = dto;
 
     if (!token || token.trim() === '') {
@@ -43,12 +44,34 @@ export class AuthService {
         throw ExceptionFactory.unauthorized('Google token validation failed');
       }
 
-      let user;
+      const email = data.email.toLowerCase();
+      const owner = await this.prisma.owner.findUnique({ where: { email } });
 
-      if (!user) {
-        // Create user and generate tokens
+      // TODO: Send welcome email
+
+      if (!owner) {
+        const newOwner = await this.prisma.owner.create({
+          data: {
+            email,
+            email_verified: data.email_verified,
+          },
+        });
+
+        const claim = this.constructAuthTokenClaim({
+          email: newOwner.email,
+          sub: newOwner.id,
+        });
+
+        const tokens = await this.generateTokensFromAuthClaim(claim);
+        return { ...tokens, email: newOwner.email, id: newOwner.id };
       } else {
-        // Generate tokens
+        const claim = this.constructAuthTokenClaim({
+          email: owner.email,
+          sub: owner.id,
+        });
+
+        const tokens = await this.generateTokensFromAuthClaim(claim);
+        return { ...tokens, email: owner.email, id: owner.id };
       }
     } catch (e) {
       ExceptionHandler.handle(e);
@@ -61,23 +84,25 @@ export class AuthService {
     try {
       const decodedClaim = await this.jwtService.verify(token);
 
-      // Get user from database
-      let user, claim;
+      const claim = this.constructAuthTokenClaim({
+        email: decodedClaim.email,
+        sub: decodedClaim.sub,
+      });
 
-      // if (!user || !user.isActive) {
-      //   throw ExceptionFactory.unauthorized('Invalid refresh token');
-      // }
+      const owner = await this.getOwnerByEmail(decodedClaim.email);
 
-      return this.generateTokensFromAuthClaim(claim);
+      if (!owner) {
+        throw ExceptionFactory.unauthorized('Invalid or expired refresh token provided');
+      }
+
+      return await this.generateTokensFromAuthClaim(claim);
     } catch (e) {
       ExceptionHandler.handle(e);
     }
   }
 
-  // TODO: Type claim interface {sub, iss, aud} e.t.c
-  // TODO: Refactor
   private async generateTokensFromAuthClaim(claim) {
-    const [accessToken, refreshToken] = await Promise.all([
+    const [access_token, refresh_token] = await Promise.all([
       this.jwtService.signAsync(claim),
       this.jwtService.signAsync(claim, {
         secret: this.config.get<string>('JWT_SECRET'),
@@ -86,8 +111,34 @@ export class AuthService {
     ]);
 
     return {
-      accessToken, // Expires in 15 minutes
-      refreshToken,
+      access_token, // Expires in 15 minutes
+      refresh_token,
+    };
+  }
+
+  private async getOwnerByEmail(email: string) {
+    if (!email)
+      throw ExceptionFactory.badRequest('Email is required to retrieve owner info by email');
+    const trimmedEmail = email.trim();
+
+    try {
+      const owner = await this.prisma.owner.findUnique({ where: { email: trimmedEmail } });
+      if (!owner) throw ExceptionFactory.notFound('Owner not found');
+      return owner;
+    } catch (e) {
+      ExceptionHandler.handle(e);
+    }
+  }
+
+  // TODO: Populate token claim further if needed
+  private constructAuthTokenClaim(data: AuthTokenClaim): SignAuthTokenClaim {
+    const { email, sub } = data;
+    return {
+      sub,
+      email,
+      aud: '',
+      azp: '',
+      iss: '',
     };
   }
 }

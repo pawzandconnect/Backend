@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CreatePetRequestDto } from './dto';
 import { PetRepository } from './pet.repository';
-import { PetMediaType } from '../../../generated/prisma/enums';
+import { PetMediaType } from '@db/enums';
 import {
   MAX_PHOTO_SIZE,
   MAX_PHOTOS,
@@ -10,18 +10,19 @@ import {
   MAX_VIDEO_SIZE_MB,
 } from '@common/constants';
 import { ExceptionFactory, ExceptionHandler } from '@utils';
-import { FileMeta } from '@common/typings';
+import { AuthTokenClaim, FileMeta } from '@common/typings';
 
 @Injectable()
 export class PetService {
   constructor(private readonly petRepo: PetRepository) {}
 
-  async createPetProfile(dto: CreatePetRequestDto) {
+  async createPetProfile(dto: CreatePetRequestDto, owner: AuthTokenClaim) {
     const { media, media_type } = dto;
     this.validateMedia(media, media_type);
 
     const payload = {
       ...dto,
+      owner_id: owner.sub,
       media: JSON.parse(JSON.stringify(dto.media)),
     };
 
@@ -49,6 +50,15 @@ export class PetService {
       });
 
       return { message: 'Pet profile visibility updated', data: updatedProfile };
+    } catch (e) {
+      ExceptionHandler.handle(e);
+    }
+  }
+
+  async getAllPets() {
+    try {
+      const pets = await this.petRepo.findAll();
+      return { message: 'All pet profiles retrieved', data: pets };
     } catch (e) {
       ExceptionHandler.handle(e);
     }

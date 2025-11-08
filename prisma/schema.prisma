@@ -79,8 +79,37 @@ model PetProfile {
   temperament_tags       String[]
   available_for_adoption Boolean         @default(false)
 
+  // Relationship 1:1
+  owner_id String @unique
+  owner    Owner  @relation(fields: [owner_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("pet_profiles")
+}
+
+model Owner {
+  id             String  @id @default(cuid())
+  email          String  @unique
+  auth_provider  String  @default("google")
+  email_verified Boolean @default(false)
+
+  looking_for                String[]
+  preferred_meetup_locations String[]
+  visibility                 ProfileVisibility @default(private)
+  travel_radius              Int?
+  longitude                  Float?
+  latitude                   Float?
+  city                       String?
+  state                      String?
+  zip_code                   String?
+  country                    String?
+  bio                        String?
+
+  // Relationship
+  petProfile PetProfile?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 }

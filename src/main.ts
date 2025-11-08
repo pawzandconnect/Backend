@@ -6,6 +6,7 @@ import { env } from '@configs';
 import { ResponseInterceptor } from '@common/interceptors';
 import { VersioningType } from '@nestjs/common';
 import { GlobalExceptionFilter } from '@common/filters';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -17,6 +18,9 @@ async function bootstrap() {
     type: VersioningType.URI,
     defaultVersion: '1',
   });
+
+  app.use(helmet());
+  app.enableCors();
 
   app.use(
     ['/docs'],
@@ -37,7 +41,7 @@ async function bootstrap() {
     .setTitle(`${env.APP_NAME} API backend documentation`)
     .setDescription(`${env.APP_DESC}`)
     .setVersion('1.0')
-    .addBearerAuth()
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' })
     .setExternalDoc('Postman Collection', '/swagger/json')
     .build();
 
@@ -57,8 +61,8 @@ async function bootstrap() {
 
   console.info(`
     ------
-    API server listening on port: :${port}
-    Access documentation :${port}/docs
+    API server listening on port: localhost:${port}
+    Access API documentation at localhost:${port}/docs
     ------
     `);
 }

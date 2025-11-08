@@ -1,4 +1,4 @@
-import { Prisma } from '../../generated/prisma/client';
+import { Prisma } from '@db/client';
 
 export enum ExceptionCode {
   ACCESS_DENIED = 'ACCESS_DENIED',
