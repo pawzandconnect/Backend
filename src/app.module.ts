@@ -17,6 +17,8 @@ import * as path from 'path';
 import { BullModule, BullRootModuleOptions } from '@nestjs/bull';
 import { AuthModule } from './modules/auth/auth.module';
 import { PetModule } from './modules/pet/pet.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -26,6 +28,16 @@ import { PetModule } from './modules/pet/pet.module';
       ignoreEnvFile: true,
     }),
     EventEmitterModule.forRoot(),
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule.forFeature(appConfigs)],
+      inject: [appConfigs.KEY],
+      useFactory: (config: ConfigType<typeof appConfigs>) => [
+        {
+          ttl: config.rateLimit.ttl,
+          limit: config.rateLimit.limit,
+        },
+      ],
+    }),
     GlobalModule,
     BullModule.forRootAsync({
       imports: [ConfigModule.forFeature(redisConfig)],
@@ -64,6 +76,6 @@ import { PetModule } from './modules/pet/pet.module';
     PetModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}
