@@ -2,9 +2,9 @@
   "extends": "./tsconfig.json",
   "include": [
     "src",
-    "generated"
   ],
   "exclude": [
+    "generated",
     "node_modules",
     "test",
     "dist",
