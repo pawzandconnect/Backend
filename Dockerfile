@@ -8,4 +8,4 @@ RUN npx prisma generate
 COPY . .
 RUN pnpm build
 EXPOSE 5675
-CMD pnpm prisma migrate deploy && pnpm start:dev
+CMD pnpm prisma migrate deploy && pnpm start:prod
