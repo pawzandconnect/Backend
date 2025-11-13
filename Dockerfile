@@ -1,7 +1,7 @@
 # ==============================
 # 1️⃣  Base builder stage
 # ==============================
-FROM node:18-alpine AS builder
+FROM node:18 AS builder
 
 WORKDIR /usr/src/app
 
@@ -21,7 +21,7 @@ RUN pnpm build
 # ==============================
 # 2️⃣  Runtime stage (slim)
 # ==============================
-FROM node:18-alpine AS runner
+FROM node:18 AS runner
 
 WORKDIR /usr/src/app
 
