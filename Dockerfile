@@ -1,11 +1,10 @@
 # ==============================
-# 1️⃣  Base builder stage
+# 1. Builder
 # ==============================
 FROM node:18 AS builder
 
 WORKDIR /usr/src/app
 
-# Enable pnpm via corepack
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 COPY package.json pnpm-lock.yaml ./
@@ -19,25 +18,30 @@ RUN pnpm build
 
 
 # ==============================
-# 2️⃣  Runtime stage (slim)
+# 2. Runtime
 # ==============================
 FROM node:18 AS runner
 
 WORKDIR /usr/src/app
-
 ENV NODE_ENV=production
 
-# Just install production deps using pnpm logic
 RUN corepack enable && corepack prepare pnpm@latest --activate
+
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --prod
 
-# Copy build artifacts
-COPY --from=builder /usr/src/app/dist ./dist
-COPY --from=builder /usr/src/app/prisma ./prisma
+# IMPORTANT: Copy Prisma engine binaries
+COPY --from=builder /usr/src/app/node_modules/.prisma /usr/src/app/node_modules/.prisma
+
+# Copy client runtime (generated client)
 COPY --from=builder /usr/src/app/generated ./generated
+
+# Copy compiled NestJS dist
+COPY --from=builder /usr/src/app/dist ./dist
+
+# Copy schema folder (optional but recommended)
+COPY --from=builder /usr/src/app/prisma ./prisma
 
 EXPOSE 5675
 
-# Run migrations with npx (no pnpm needed at runtime)
 CMD npx prisma migrate deploy && node dist/src/main.js
