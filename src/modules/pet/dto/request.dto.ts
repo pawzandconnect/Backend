@@ -6,7 +6,7 @@ import {
   PetSize,
   PetSpecies,
   ProfileVisibility,
-} from '@db/enums';
+} from '@prisma/client';
 import { FileMeta } from '@common/typings';
 
 export class CreatePetRequestDto {

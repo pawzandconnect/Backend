@@ -1,47 +1,44 @@
-# ==============================
-# 1. Builder
-# ==============================
-FROM node:18 AS builder
+# Builder stage
+FROM node:22-slim AS builder
 
+# Install pnpm globally
+RUN npm install -g pnpm
+
+# Set the working directory
 WORKDIR /usr/src/app
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
+# Copy only package manager files first for caching
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
 
-COPY prisma ./prisma
-RUN pnpm exec prisma generate
+# Install all dependencies (dev + prod) for building
+RUN pnpm install
 
+# Copy the rest of the application
 COPY . .
+
+# Generate Prisma client
+RUN pnpm prisma generate
+
+# Build the NestJS app
 RUN pnpm build
 
+# Install only production dependencies
+RUN pnpm install --prod
 
-# ==============================
-# 2. Runtime
-# ==============================
-FROM node:18 AS runner
+# Final image
+FROM node:22-slim
+
+# Install PM2 globally
+RUN npm install -g pm2
 
 WORKDIR /usr/src/app
-ENV NODE_ENV=production
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile --prod
-
-# IMPORTANT: Copy Prisma engine binaries
-COPY --from=builder /usr/src/app/node_modules/.prisma /usr/src/app/node_modules/.prisma
-
-# Copy client runtime (generated client)
-COPY --from=builder /usr/src/app/generated ./generated
-
-# Copy compiled NestJS dist
+# Copy necessary files from builder
+COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/dist ./dist
-
-# Copy schema folder (optional but recommended)
 COPY --from=builder /usr/src/app/prisma ./prisma
+COPY --from=builder /usr/src/app/package.json ./
 
-EXPOSE 5675
-
-CMD npx prisma migrate deploy && node dist/src/main.js
+# Expose the app port
+EXPOSE 3100
+CMD ["sh", "-c", "pnpm prisma migrate deploy && pnpm start:prod"]

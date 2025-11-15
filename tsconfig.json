@@ -53,12 +53,6 @@
       ],
       "@typings/*": [
         "src/typings/*"
-      ],
-      "@db": [
-        "generated/prisma"
-      ],
-      "@db/*": [
-        "generated/prisma/*"
       ]
     }
   }
