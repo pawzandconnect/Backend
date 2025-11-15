@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CreatePetRequestDto } from './dto';
 import { PetRepository } from './pet.repository';
-import { PetMediaType } from '@db/enums';
 import {
   MAX_PHOTO_SIZE,
   MAX_PHOTOS,
@@ -11,6 +10,7 @@ import {
 } from '@common/constants';
 import { ExceptionFactory, ExceptionHandler } from '@utils';
 import { AuthTokenClaim, FileMeta } from '@common/typings';
+import { PetMediaType } from '@prisma/client';
 
 @Injectable()
 export class PetService {
