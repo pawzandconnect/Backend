@@ -1,25 +1,21 @@
 import { Injectable } from '@nestjs/common';
-import { CreatePetRequestDto } from './dto';
+import { UpsertPetRequestDto } from './dto';
 import { PetRepository } from './pet.repository';
-import {
-  MAX_PHOTO_SIZE,
-  MAX_PHOTOS,
-  MAX_SIZE_MB,
-  MAX_VIDEO_SIZE,
-  MAX_VIDEO_SIZE_MB,
-} from '@common/constants';
-import { ExceptionFactory, ExceptionHandler } from '@utils';
-import { AuthTokenClaim, FileMeta } from '@common/typings';
-import { PetMediaType } from '@prisma/client';
+import { ExceptionFactory, ExceptionHandler, Helpers } from '@utils';
+import { AuthTokenClaim } from '@common/typings';
+import { ProfileVisibility } from '@prisma/client';
 
 @Injectable()
 export class PetService {
   constructor(private readonly petRepo: PetRepository) {}
 
-  async createPetProfile(dto: CreatePetRequestDto, owner: AuthTokenClaim) {
-    const { media, media_type } = dto;
-    this.validateMedia(media, media_type);
+  async upsertPetProfile(dto: UpsertPetRequestDto, owner: AuthTokenClaim) {
+    const { media, media_type, pet_id } = dto;
+    if (media && media_type) {
+      Helpers.deepValidateMedia(media, media_type);
+    }
 
+    // upsert
     const payload = {
       ...dto,
       owner_id: owner.sub,
@@ -27,8 +23,9 @@ export class PetService {
     };
 
     try {
-      const writeResult = await this.petRepo.create(payload);
-      return { message: 'Pet profile created', data: writeResult };
+      const writeResult = await this.petRepo.upsert(pet_id, payload as any);
+      const label = pet_id ? 'updated' : 'created';
+      return { message: `Pet profile ${label}`, data: writeResult };
     } catch (e) {
       ExceptionHandler.handle(e);
     }
@@ -45,8 +42,13 @@ export class PetService {
         throw ExceptionFactory.notFound('Pet profile not found.');
       }
 
+      const visibility =
+        petProfile.visibility === ProfileVisibility.private
+          ? ProfileVisibility.public
+          : ProfileVisibility.private;
+
       const updatedProfile = await this.petRepo.update(petId, {
-        visibility: !petProfile.visibility,
+        visibility,
       });
 
       return { message: 'Pet profile visibility updated', data: updatedProfile };
@@ -54,11 +56,22 @@ export class PetService {
       ExceptionHandler.handle(e);
     }
   }
+  async toggleCanAdopt(petId: string) {
+    if (!petId) {
+      throw ExceptionFactory.badRequest('Pet ID is required.');
+    }
 
-  async getAllPets() {
     try {
-      const pets = await this.petRepo.findAll();
-      return { message: 'All pet profiles retrieved', data: pets };
+      const petProfile = await this.petRepo.findById(petId);
+      if (!petProfile) {
+        throw ExceptionFactory.notFound('Pet profile not found.');
+      }
+
+      const updatedProfile = await this.petRepo.update(petId, {
+        available_for_adoption: !petProfile.available_for_adoption,
+      });
+
+      return { message: 'Pet profile adoption status updated', data: updatedProfile };
     } catch (e) {
       ExceptionHandler.handle(e);
     }
@@ -81,48 +94,28 @@ export class PetService {
     }
   }
 
-  // Private
-  private validateMedia(media: FileMeta[], mediaType: PetMediaType) {
-    if (mediaType === PetMediaType.image) {
-      const isValidImgMedia = media.filter((item) => !item.mimeType.startsWith('image/'));
-      if (isValidImgMedia.length > 0) {
-        throw ExceptionFactory.badRequest('All media files must be images.');
-      }
+  async getPetPosts(dto) {
+    // If petId isn't in filter, set fallback as owner's pet if any or delete filter from request payload
+    try {
+    } catch (e) {
+      ExceptionHandler.handle(e);
+    }
+  }
 
-      if (media.length === 0) {
-        throw ExceptionFactory.badRequest('At least one photo is required to create pet profile.');
-      }
+  async getPetConnections(dto) {
+    // If petId isn't in filter, set fallback as owner's pet if any or delete filter from request payload
+    try {
+    } catch (e) {
+      ExceptionHandler.handle(e);
+    }
+  }
 
-      if (media.length > MAX_PHOTOS) {
-        throw ExceptionFactory.badRequest('Cannot upload more than 5 photos.');
-      }
-
-      const oversizedPhotos = media.filter((item) => item.size > MAX_SIZE_MB);
-      if (oversizedPhotos.length > 0) {
-        throw ExceptionFactory.badRequest(
-          `Each photo must be less than ${MAX_PHOTO_SIZE}MB in size.`,
-        );
-      }
-    } else if (mediaType === PetMediaType.video) {
-      const isValidVideoMedia = media.filter((item) => !item.mimeType.startsWith('video/'));
-      if (isValidVideoMedia.length > 0) {
-        throw ExceptionFactory.badRequest('All media files must be videos.');
-      }
-      if (media.length === 0) {
-        throw ExceptionFactory.badRequest('A video is required to create pet profile.');
-      }
-
-      if (media.length > 1) {
-        throw ExceptionFactory.badRequest('Only one video can be uploaded.');
-      }
-
-      // Expecting only one video
-      const video = media[0];
-      if (video.size > MAX_VIDEO_SIZE_MB) {
-        throw ExceptionFactory.badRequest(`Video size cannot exceed ${MAX_VIDEO_SIZE}MB.`);
-      }
-    } else {
-      throw ExceptionFactory.badRequest('Invalid media type.');
+  async getPetFriends(dto) {
+    // If petId isn't in filter, set fallback as owner's pet if any or delete filter from request payload
+    // I should probably create a small helper function for that
+    try {
+    } catch (e) {
+      ExceptionHandler.handle(e);
     }
   }
 }
