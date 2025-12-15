@@ -20,6 +20,8 @@ import { PetModule } from './modules/pet/pet.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { OwnerModule } from './modules/owner/owner.module';
+import { FeedModule } from './modules/feed/feed.module';
+import { PostModule } from './modules/post/post.module';
 
 @Module({
   imports: [
@@ -76,6 +78,8 @@ import { OwnerModule } from './modules/owner/owner.module';
     AuthModule,
     PetModule,
     OwnerModule,
+    FeedModule,
+    PostModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],

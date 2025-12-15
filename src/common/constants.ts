@@ -4,10 +4,18 @@ export enum PlatformEvents {
 
 // File constraint
 // Photos : 5MB each, max 5 photos
-// Video: 20MB max
+// Video: 20MB max, 1 video
 const MAX_PHOTOS = 5;
 const MAX_PHOTO_SIZE = 5;
-const MAX_SIZE_MB = 5 * 1024 * 1024; // 5MB in bytes
+const MAX_PHOTO_SIZE_MB = 5 * 1024 * 1024; // 5MB in bytes
 const MAX_VIDEO_SIZE_MB = 20 * 1024 * 1024; // 20MB in bytes
 const MAX_VIDEO_SIZE = 20;
-export { MAX_PHOTOS, MAX_SIZE_MB, MAX_VIDEO_SIZE_MB, MAX_PHOTO_SIZE, MAX_VIDEO_SIZE };
+const MAX_ALLOWED_VIDEOS = 1;
+export {
+  MAX_PHOTOS,
+  MAX_PHOTO_SIZE_MB,
+  MAX_VIDEO_SIZE_MB,
+  MAX_PHOTO_SIZE,
+  MAX_VIDEO_SIZE,
+  MAX_ALLOWED_VIDEOS,
+};

@@ -1,6 +1,7 @@
 export interface AuthTokenClaim {
   sub: string;
   email: string;
+  pet_id?: string;
 }
 
 export interface SignAuthTokenClaim extends AuthTokenClaim {
@@ -14,4 +15,5 @@ export interface AuthResponse {
   refresh_token: string;
   id: string;
   email: string;
+  pet_id?: string;
 }

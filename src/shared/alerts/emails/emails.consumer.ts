@@ -35,7 +35,7 @@ export class EmailsConsumer {
 
   @OnQueueError()
   onError(err: Error) {
-    console.log(`Error processing email task `, err);
+    console.log(`Error processing email task `, err.message);
   }
 
   @OnQueueCompleted()

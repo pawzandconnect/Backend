@@ -7,6 +7,7 @@ import { firstValueFrom, take } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { AuthResponse, AuthTokenClaim, SignAuthTokenClaim } from '@common/typings';
+import { AuthProvider } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -45,35 +46,60 @@ export class AuthService {
       }
 
       const email = data.email.toLowerCase();
-      const owner = await this.prisma.owner.findUnique({ where: { email } });
-
-      // TODO: Send welcome email
+      const owner = await this.prisma.owner.findUnique({
+        where: { email },
+        select: { email: true, id: true, petProfile: { select: { id: true } } },
+      });
 
       if (!owner) {
         const newOwner = await this.prisma.owner.create({
           data: {
             email,
             email_verified: data.email_verified,
+            auth_provider: AuthProvider.google,
+          },
+          select: {
+            email: true,
+            id: true,
+            petProfile: {
+              select: {
+                id: true,
+              },
+            },
           },
         });
-
         const claim = this.constructAuthTokenClaim({
           email: newOwner.email,
           sub: newOwner.id,
+          ...(newOwner?.petProfile && { pet_id: newOwner.petProfile.id }),
         });
 
         const tokens = await this.generateTokensFromAuthClaim(claim);
-        return { ...tokens, email: newOwner.email, id: newOwner.id };
+        const hydratedResponse: AuthResponse = {
+          ...tokens,
+          email: newOwner.email,
+          id: newOwner.id,
+          ...(newOwner?.petProfile && { pet_id: newOwner.petProfile.id }),
+        };
+        return hydratedResponse;
       } else {
         const claim = this.constructAuthTokenClaim({
           email: owner.email,
           sub: owner.id,
+          ...(owner?.petProfile && { pet_id: owner.petProfile.id }),
         });
 
         const tokens = await this.generateTokensFromAuthClaim(claim);
-        return { ...tokens, email: owner.email, id: owner.id };
+        const hydratedResponse: AuthResponse = {
+          ...tokens,
+          email: owner.email,
+          id: owner.id,
+          ...(owner?.petProfile && { pet_id: owner.petProfile.id }),
+        };
+        return hydratedResponse;
       }
     } catch (e) {
+      this.logger.log('Failed to authenticate user', e);
       ExceptionHandler.handle(e);
     }
   }
@@ -101,7 +127,7 @@ export class AuthService {
     }
   }
 
-  private async generateTokensFromAuthClaim(claim) {
+  private async generateTokensFromAuthClaim(claim: Record<string, any>) {
     const [access_token, refresh_token] = await Promise.all([
       this.jwtService.signAsync(claim),
       this.jwtService.signAsync(claim, {
@@ -130,15 +156,15 @@ export class AuthService {
     }
   }
 
-  // TODO: Populate token claim further if needed
   private constructAuthTokenClaim(data: AuthTokenClaim): SignAuthTokenClaim {
-    const { email, sub } = data;
+    const { email, sub, pet_id } = data;
     return {
       sub,
       email,
-      aud: '',
-      azp: '',
-      iss: '',
+      pet_id,
+      aud: this.config.getOrThrow<string>('JWT_AUDIENCE'),
+      azp: this.config.getOrThrow<string>('JWT_AUTHORIZED_PARTY'),
+      iss: this.config.getOrThrow<string>('JWT_ISSUER'),
     };
   }
 }
