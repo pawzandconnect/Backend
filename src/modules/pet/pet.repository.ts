@@ -11,7 +11,7 @@ export class PetRepository {
   }
 
   async findAll() {
-    return this.prisma.petProfile.findMany({ orderBy: { createdAt: 'desc' } });
+    return this.prisma.petProfile.findMany({ orderBy: { created_at: 'desc' } });
   }
 
   async findById(id: string) {

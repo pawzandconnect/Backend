@@ -22,6 +22,9 @@ import { APP_GUARD } from '@nestjs/core';
 import { OwnerModule } from './modules/owner/owner.module';
 import { FeedModule } from './modules/feed/feed.module';
 import { PostModule } from './modules/post/post.module';
+import { ConnectionModule } from './modules/connection/connection.module';
+import { FriendModule } from './modules/friend/friend.module';
+import { CommunityModule } from './modules/community/community.module';
 
 @Module({
   imports: [
@@ -80,6 +83,9 @@ import { PostModule } from './modules/post/post.module';
     OwnerModule,
     FeedModule,
     PostModule,
+    ConnectionModule,
+    FriendModule,
+    CommunityModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],

@@ -48,7 +48,7 @@ export class AuthService {
       const email = data.email.toLowerCase();
       const owner = await this.prisma.owner.findUnique({
         where: { email },
-        select: { email: true, id: true, petProfile: { select: { id: true } } },
+        select: { email: true, id: true, pet_profile: { select: { id: true } } },
       });
 
       if (!owner) {
@@ -61,7 +61,7 @@ export class AuthService {
           select: {
             email: true,
             id: true,
-            petProfile: {
+            pet_profile: {
               select: {
                 id: true,
               },
@@ -71,7 +71,7 @@ export class AuthService {
         const claim = this.constructAuthTokenClaim({
           email: newOwner.email,
           sub: newOwner.id,
-          ...(newOwner?.petProfile && { pet_id: newOwner.petProfile.id }),
+          ...(newOwner?.pet_profile && { pet_id: newOwner.pet_profile.id }),
         });
 
         const tokens = await this.generateTokensFromAuthClaim(claim);
@@ -79,14 +79,14 @@ export class AuthService {
           ...tokens,
           email: newOwner.email,
           id: newOwner.id,
-          ...(newOwner?.petProfile && { pet_id: newOwner.petProfile.id }),
+          ...(newOwner?.pet_profile && { pet_id: newOwner.pet_profile.id }),
         };
         return hydratedResponse;
       } else {
         const claim = this.constructAuthTokenClaim({
           email: owner.email,
           sub: owner.id,
-          ...(owner?.petProfile && { pet_id: owner.petProfile.id }),
+          ...(owner?.pet_profile && { pet_id: owner.pet_profile.id }),
         });
 
         const tokens = await this.generateTokensFromAuthClaim(claim);
@@ -94,7 +94,7 @@ export class AuthService {
           ...tokens,
           email: owner.email,
           id: owner.id,
-          ...(owner?.petProfile && { pet_id: owner.petProfile.id }),
+          ...(owner?.pet_profile && { pet_id: owner.pet_profile.id }),
         };
         return hydratedResponse;
       }

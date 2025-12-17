@@ -107,6 +107,18 @@ export class ExceptionFactory {
   static unProcessable(customMessage?: string) {
     return new CustomException(ExceptionCode.UNPROCESSABLE_ENTITY, customMessage);
   }
+  static isUniqueViolation(error: unknown, fields?: string[]): boolean {
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') {
+      return false;
+    }
+
+    if (!fields) return true;
+
+    const target = error.meta?.target as string[] | undefined;
+    if (!target) return false;
+
+    return fields.every((field) => target.includes(field));
+  }
 }
 
 export class ExceptionHandler {

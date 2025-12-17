@@ -1,6 +1,6 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { FileMeta } from '@common/typings';
-import { IsEnum, IsString } from 'class-validator';
+import { IsArray, IsEnum, IsString } from 'class-validator';
 import { ReactionType } from '@prisma/client';
 
 export class CreatePostDto {
@@ -10,14 +10,14 @@ export class CreatePostDto {
   })
   @IsString()
   content: string;
-  @ApiPropertyOptional({
+  @ApiProperty({
     example: [
       { url: 'http://example.com/image1.jpg', mimetype: 'image/webp', size: 102400 },
       { url: 'http://example.com/video1.mp4', mimetype: 'video/mp4', size: 102400, duration: 5.0 },
     ],
     description: 'An array of media items related to the pet',
-    required: false,
   })
+  @IsArray()
   media: Array<FileMeta>;
 }
 

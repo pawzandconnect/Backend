@@ -64,6 +64,23 @@ enum ActionTakenBy {
   admin
 }
 
+enum ConnectionRequestStatus {
+  pending
+  accepted
+  rejected
+}
+
+enum FriendRequestStatus {
+  pending
+  accepted
+  rejected
+}
+
+enum VoteValue {
+  up
+  down
+}
+
 model File {
   id        String  @id @default(cuid())
   key       String
@@ -72,8 +89,8 @@ model File {
   url       String?
   type      String?
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   @@map("files")
 }
@@ -105,13 +122,17 @@ model PetProfile {
   owner_id String @unique
   owner    Owner  @relation(fields: [owner_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  createdAt      DateTime       @default(now()) @map("created_at")
-  updatedAt      DateTime       @updatedAt @map("updated_at")
-  posts          Post[]         @relation("AuthorPosts")
-  comments       Comment[]
-  commentReplies CommentReply[]
-  reactions      Reaction[]
-  likedPosts     LikedPost[]    @relation("LikedBy")
+  created_at                   DateTime            @default(now())
+  updated_at                   DateTime            @updatedAt
+  posts                        Post[]              @relation("AuthorPosts")
+  comments                     Comment[]
+  comment_replies              CommentReply[]
+  reactions                    Reaction[]
+  liked_posts                  LikedPost[]         @relation("LikedBy")
+  sent_connection_requests     ConnectionRequest[] @relation("ConnectionRequestSender")
+  received_connection_requests ConnectionRequest[] @relation("ConnectionRequestReceiver")
+  connections_as_pet           Connection[]        @relation("ConnectionPet")
+  connections_as_connected_pet Connection[]        @relation("ConnectedPet")
 
   @@map("pet_profiles")
 }
@@ -142,12 +163,19 @@ model Owner {
   display_picture            String?
 
   // Relationship
-  petProfile PetProfile?
+  pet_profile PetProfile?
 
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
-  deleted_at     DateTime?
-  deactivated_at DateTime?
+  created_at               DateTime            @default(now())
+  updated_at               DateTime            @updatedAt
+  deleted_at               DateTime?
+  deactivated_at           DateTime?
+  community_posts          CommunityPost[]
+  community_comments       CommunityComment[]
+  friends                  Friend[]            @relation("FriendOwner")
+  friends_as_friend        Friend[]            @relation("FriendOfOwner")
+  sent_friend_requests     FriendRequest[]     @relation("FriendRequestSender")
+  received_friend_requests FriendRequest[]     @relation("FriendRequestReceiver")
+  community_post_votes     CommunityPostVote[]
 
   @@map("owners")
 }
@@ -161,17 +189,17 @@ model Post {
   author_id String
   author    PetProfile @relation("AuthorPosts", fields: [author_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  likeCount Int @default(0)
-  viewCount Int @default(0)
+  like_count Int @default(0)
+  view_count Int @default(0)
 
-  createdAt  DateTime    @default(now()) @map("created_at")
-  updatedAt  DateTime    @updatedAt @map("updated_at")
-  comments   Comment[]
-  reactions  Reaction[]
-  likedPosts LikedPost[]
+  created_at  DateTime    @default(now())
+  updated_at  DateTime    @updatedAt
+  comments    Comment[]
+  reactions   Reaction[]
+  liked_posts LikedPost[]
 
   @@index([author_id])
-  @@index([author_id, createdAt])
+  @@index([author_id, created_at])
   @@map("posts")
 }
 
@@ -185,12 +213,12 @@ model LikedPost {
   comment_id       String?
   comment_reply_id String?
 
-  post         Post?         @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  comment      Comment?      @relation(fields: [comment_id], references: [id], onDelete: Cascade)
-  commentReply CommentReply? @relation(fields: [comment_reply_id], references: [id], onDelete: Cascade)
+  post          Post?         @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  comment       Comment?      @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  comment_reply CommentReply? @relation(fields: [comment_reply_id], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   @@unique([liked_by_id, post_id])
   @@unique([liked_by_id, comment_id])
@@ -207,19 +235,19 @@ model Comment {
   author_id String
   author    PetProfile @relation(fields: [author_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  likeCount Int @default(0)
+  like_count Int @default(0)
 
-  content        String
-  createdAt      DateTime       @default(now()) @map("created_at")
-  updatedAt      DateTime       @updatedAt @map("updated_at")
-  commentReplies CommentReply[]
-  reactions      Reaction[]
-  likedPosts     LikedPost[]
+  content         String
+  created_at      DateTime       @default(now())
+  updated_at      DateTime       @updatedAt
+  comment_replies CommentReply[]
+  reactions       Reaction[]
+  liked_posts     LikedPost[]
 
   @@index([author_id])
   @@index([post_id])
-  @@index([post_id, createdAt])
-  @@index([author_id, createdAt])
+  @@index([post_id, created_at])
+  @@index([author_id, created_at])
   @@map("comments")
 }
 
@@ -232,16 +260,16 @@ model CommentReply {
   author_id String
   author    PetProfile @relation(fields: [author_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  likeCount Int @default(0)
+  like_count Int @default(0)
 
-  content    String
-  createdAt  DateTime    @default(now()) @map("created_at")
-  updatedAt  DateTime    @updatedAt @map("updated_at")
-  reactions  Reaction[]
-  likedPosts LikedPost[]
+  content     String
+  created_at  DateTime    @default(now())
+  updated_at  DateTime    @updatedAt
+  reactions   Reaction[]
+  liked_posts LikedPost[]
 
   @@index([author_id, comment_id])
-  @@index([comment_id, createdAt])
+  @@index([comment_id, created_at])
   @@map("comment_replies")
 }
 
@@ -256,15 +284,152 @@ model Reaction {
   author_id String
   author    PetProfile @relation(fields: [author_id], references: [id], onDelete: Cascade)
 
-  post         Post?         @relation(fields: [post_id], references: [id], onDelete: Cascade)
-  comment      Comment?      @relation(fields: [comment_id], references: [id], onDelete: Cascade)
-  commentReply CommentReply? @relation(fields: [comment_reply_id], references: [id], onDelete: Cascade)
+  post          Post?         @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment       Comment?      @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  comment_reply CommentReply? @relation(fields: [comment_reply_id], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now()) @map("created_at")
+  created_at DateTime @default(now())
 
   @@unique([author_id, post_id, type])
   @@unique([author_id, comment_id, type])
   @@unique([author_id, comment_reply_id, type])
   @@index([post_id, type])
   @@map("reactions")
+}
+
+model Connection {
+  id String @id @default(cuid())
+
+  pet_id           String
+  connected_pet_id String
+
+  pet           PetProfile @relation("ConnectionPet", fields: [pet_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  connected_pet PetProfile @relation("ConnectedPet", fields: [connected_pet_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([pet_id, connected_pet_id])
+  @@map("connections")
+}
+
+model ConnectionRequest {
+  id String @id @default(cuid())
+
+  sender_pet_id   String
+  receiver_pet_id String
+  status          ConnectionRequestStatus @default(pending)
+
+  sender   PetProfile @relation("ConnectionRequestSender", fields: [sender_pet_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  receiver PetProfile @relation("ConnectionRequestReceiver", fields: [receiver_pet_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([sender_pet_id, receiver_pet_id])
+  @@map("connection_requests")
+}
+
+model Friend {
+  id String @id @default(cuid())
+
+  owner_id        String
+  friend_owner_id String
+
+  owner        Owner @relation("FriendOwner", fields: [owner_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  friend_owner Owner @relation("FriendOfOwner", fields: [friend_owner_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([owner_id, friend_owner_id])
+  @@map("friends")
+}
+
+model FriendRequest {
+  id String @id @default(cuid())
+
+  sender_owner_id   String
+  receiver_owner_id String
+  status            FriendRequestStatus @default(pending)
+
+  sender   Owner @relation("FriendRequestSender", fields: [sender_owner_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  receiver Owner @relation("FriendRequestReceiver", fields: [receiver_owner_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([sender_owner_id, receiver_owner_id])
+  @@map("friend_requests")
+}
+
+model CommunityPost {
+  id      String @id @default(cuid())
+  title   String
+  content String
+
+  author_id String
+  author    Owner  @relation(fields: [author_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  // optional
+  media Json[]
+  tags  String[]
+
+  upvotes   Int @default(0)
+  downvotes Int @default(0)
+  score     Int @default(0)
+
+  // I have small notes for myself on score calc
+  // score = new_state - old_state
+  // states: none = 0, up = +1, down = -1
+
+  created_at           DateTime            @default(now())
+  updated_at           DateTime            @updatedAt
+  community_comments   CommunityComment[]
+  community_post_votes CommunityPostVote[]
+
+  @@index([author_id])
+  @@index([author_id, created_at])
+  @@index([score, created_at])
+  @@index([created_at])
+  @@index([tags], type: Gin)
+  @@map("community_posts")
+}
+
+model CommunityPostVote {
+  id String @id @default(cuid())
+
+  post_id   String
+  author_id String
+  value     VoteValue
+
+  author Owner         @relation(fields: [author_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  post   CommunityPost @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([post_id, author_id])
+  @@index([post_id])
+  @@map("community_post_votes")
+}
+
+model CommunityComment {
+  id      String @id @default(cuid())
+  content String
+
+  author_id String
+  post_id   String
+
+  author Owner         @relation(fields: [author_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  post   CommunityPost @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([author_id])
+  @@index([post_id])
+  @@index([post_id, created_at])
+  @@index([author_id, created_at])
+  @@map("community_comments")
 }
