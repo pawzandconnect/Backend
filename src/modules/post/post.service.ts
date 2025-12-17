@@ -28,15 +28,14 @@ export class PostService {
     if (!content || content.trim() === '') {
       throw ExceptionFactory.badRequest('Post content is required to create a post');
     }
-    // Validate if media is provided (but I think it should be required - Remind me to ask Sophia)
-    if (media) {
-      Helpers.basicValidateMedia(media);
-    }
+
+    // Validate media
+    Helpers.basicValidateMedia(media);
 
     const hydratedPostPayload = {
       content,
       author_id: owner.pet_id,
-      ...(media && { media: JSON.parse(JSON.stringify(dto.media)) }),
+      ...(media && { media: JSON.parse(JSON.stringify(media)) }),
     };
     try {
       const createdPost = await this.postRepo.create(hydratedPostPayload);
@@ -180,7 +179,7 @@ export class PostService {
     }
 
     try {
-      const likedPost = await this.postRepo.createComment({
+      const likedPost = await this.postRepo.storeLikeAndIncrementCountWithTx({
         post_id,
         liked_by_id: owner.pet_id,
       } as LikedPost);
@@ -197,7 +196,7 @@ export class PostService {
     }
 
     try {
-      const likedPost = await this.postRepo.createComment({
+      const likedPost = await this.postRepo.storeLikeAndIncrementCountWithTx({
         comment_id,
         liked_by_id: owner.pet_id,
       } as LikedPost);
@@ -214,7 +213,7 @@ export class PostService {
     }
 
     try {
-      const likedPost = await this.postRepo.createComment({
+      const likedPost = await this.postRepo.storeLikeAndIncrementCountWithTx({
         comment_reply_id,
         liked_by_id: owner.pet_id,
       } as LikedPost);

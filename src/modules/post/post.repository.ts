@@ -11,7 +11,7 @@ export class PostRepository {
   }
 
   async findAll() {
-    return this.prisma.post.findMany({ orderBy: { createdAt: 'desc' } });
+    return this.prisma.post.findMany({ orderBy: { created_at: 'desc' } });
   }
 
   async findById(id) {
@@ -62,9 +62,40 @@ export class PostRepository {
     });
   }
 
-  async storeLike(data: LikedPost) {
-    return this.prisma.likedPost.create({
-      data,
+  async storeLikeAndIncrementCountWithTx(data: LikedPost) {
+    const { comment_id, comment_reply_id, post_id } = data;
+    // Validation: Exactly one entity must be provided
+    const entityCount = [post_id, comment_id, comment_reply_id].filter(Boolean).length;
+
+    if (entityCount === 0) {
+      throw new Error('Must provide at least one entity ID to like');
+    }
+
+    if (entityCount > 1) {
+      throw new Error('Can only like one entity at a time');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.likedPost.create({
+        data,
+      });
+
+      if (post_id) {
+        await tx.post.update({
+          where: { id: post_id },
+          data: { like_count: { increment: 1 } },
+        });
+      } else if (comment_id) {
+        await tx.comment.update({
+          where: { id: comment_id },
+          data: { like_count: { increment: 1 } },
+        });
+      } else if (comment_reply_id) {
+        await tx.commentReply.update({
+          where: { id: comment_reply_id },
+          data: { like_count: { increment: 1 } },
+        });
+      }
     });
   }
 }

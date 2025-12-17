@@ -9,7 +9,7 @@ import {
 } from '@prisma/client';
 import { FileMeta } from '@common/typings';
 import { ListPaginationDto } from '@common/dtos';
-import { IsEnum, IsString } from 'class-validator';
+import { IsArray, IsEnum, IsString } from 'class-validator';
 
 export class UpsertPetRequestDto {
   @ApiPropertyOptional({
@@ -60,6 +60,7 @@ export class UpsertPetRequestDto {
     description: 'An array of media items related to the pet',
     required: false,
   })
+  @IsArray()
   media: Array<FileMeta>;
 
   @ApiPropertyOptional({

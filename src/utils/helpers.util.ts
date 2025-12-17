@@ -1,4 +1,4 @@
-import { FileMeta } from '@common/typings';
+import { FileMeta, VoteState } from '@common/typings';
 import { PetMediaType } from '@prisma/client';
 import { ExceptionFactory } from './exception.util';
 import {
@@ -101,5 +101,66 @@ export class Helpers {
     } else {
       throw ExceptionFactory.badRequest('Unsupported media type.');
     }
+  }
+
+  static normalizePair(a: string, b: string): [string, string] {
+    if (a === b) {
+      throw ExceptionFactory.badRequest("You can't connect to yourself");
+    }
+    return a < b ? [a, b] : [b, a];
+  }
+  static getPostUpdateForTransition(from: VoteState, to: VoteState) {
+    if (from === to) return null;
+
+    if (from === 'NONE' && to === 'UP') {
+      return {
+        upvotes: { increment: 1 },
+        score: { increment: 1 },
+      };
+    }
+
+    if (from === 'NONE' && to === 'DOWN') {
+      return {
+        downvotes: { increment: 1 },
+        score: { decrement: 1 },
+      };
+    }
+
+    if (from === 'UP' && to === 'NONE') {
+      return {
+        upvotes: { decrement: 1 },
+        score: { decrement: 1 },
+      };
+    }
+
+    if (from === 'DOWN' && to === 'NONE') {
+      return {
+        downvotes: { decrement: 1 },
+        score: { increment: 1 },
+      };
+    }
+
+    if (from === 'UP' && to === 'DOWN') {
+      return {
+        upvotes: { decrement: 1 },
+        downvotes: { increment: 1 },
+        score: { decrement: 2 },
+      };
+    }
+
+    if (from === 'DOWN' && to === 'UP') {
+      return {
+        downvotes: { decrement: 1 },
+        upvotes: { increment: 1 },
+        score: { increment: 2 },
+      };
+    }
+
+    throw new Error(`Invalid vote transition: ${from} -> ${to}`);
+  }
+
+  static getVoteState(value?: 'up' | 'down'): VoteState {
+    if (!value) return 'NONE';
+    return value === 'up' ? 'UP' : 'DOWN';
   }
 }
