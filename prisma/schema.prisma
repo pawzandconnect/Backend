@@ -165,17 +165,20 @@ model Owner {
   // Relationship
   pet_profile PetProfile?
 
-  created_at               DateTime            @default(now())
-  updated_at               DateTime            @updatedAt
-  deleted_at               DateTime?
-  deactivated_at           DateTime?
-  community_posts          CommunityPost[]
-  community_comments       CommunityComment[]
-  friends                  Friend[]            @relation("FriendOwner")
-  friends_as_friend        Friend[]            @relation("FriendOfOwner")
-  sent_friend_requests     FriendRequest[]     @relation("FriendRequestSender")
-  received_friend_requests FriendRequest[]     @relation("FriendRequestReceiver")
-  community_post_votes     CommunityPostVote[]
+  created_at                DateTime                  @default(now())
+  updated_at                DateTime                  @updatedAt
+  deleted_at                DateTime?
+  deactivated_at            DateTime?
+  community_posts           CommunityPost[]
+  community_comments        CommunityComment[]
+  friends                   Friend[]                  @relation("FriendOwner")
+  friends_as_friend         Friend[]                  @relation("FriendOfOwner")
+  sent_friend_requests      FriendRequest[]           @relation("FriendRequestSender")
+  received_friend_requests  FriendRequest[]           @relation("FriendRequestReceiver")
+  community_post_votes      CommunityPostVote[]
+  conversation_participants ConversationParticipant[]
+  messages                  Message[]
+  message_receipts          MessageReceipt[]
 
   @@map("owners")
 }
@@ -432,4 +435,76 @@ model CommunityComment {
   @@index([post_id, created_at])
   @@index([author_id, created_at])
   @@map("community_comments")
+}
+
+// Conversations
+model Conversation {
+  id String @id @default(cuid())
+
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([created_at])
+  @@map("conversations")
+}
+
+model ConversationParticipant {
+  id String @id @default(cuid())
+
+  conversation_id String
+  owner_id        String
+
+  conversation Conversation @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+  owner        Owner        @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+
+  last_read_message_id String?
+  last_read_message    Message? @relation(fields: [last_read_message_id], references: [id], onDelete: Cascade)
+
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+  joined_at    DateTime?
+  last_read_at DateTime?
+
+  @@index([conversation_id, owner_id])
+  @@map("conversation_participants")
+}
+
+model Message {
+  id      String @id @default(cuid())
+  content String
+
+  conversation_id String
+  sender_id       String
+
+  conversation Conversation @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+  sender       Owner        @relation(fields: [sender_id], references: [id], onDelete: Cascade)
+
+  created_at                DateTime                  @default(now())
+  updated_at                DateTime                  @updatedAt
+  message_receipts          MessageReceipt[]
+  conversation_participants ConversationParticipant[]
+
+  @@map("messages")
+}
+
+model MessageReceipt {
+  id String @id @default(cuid())
+
+  message_id String
+  owner_id   String
+
+  delivered_at DateTime?
+  read_at      DateTime?
+
+  message Message @relation(fields: [message_id], references: [id], onDelete: Cascade)
+  owner   Owner   @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([message_id, owner_id])
+  @@map("message_receipts")
 }

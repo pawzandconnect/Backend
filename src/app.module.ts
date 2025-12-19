@@ -25,6 +25,7 @@ import { PostModule } from './modules/post/post.module';
 import { ConnectionModule } from './modules/connection/connection.module';
 import { FriendModule } from './modules/friend/friend.module';
 import { CommunityModule } from './modules/community/community.module';
+import { ChatModule } from './modules/chat/chat.module';
 
 @Module({
   imports: [
@@ -86,6 +87,7 @@ import { CommunityModule } from './modules/community/community.module';
     ConnectionModule,
     FriendModule,
     CommunityModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
