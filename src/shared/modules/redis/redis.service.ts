@@ -25,4 +25,18 @@ export class RedisService {
   async flush(): Promise<void> {
     await this.redis.flushall();
   }
+
+  // Sets
+  async sadd(key: string, value: any) {
+    return await this.redis.sadd(key, value);
+  }
+  async srem(key: string, value: any) {
+    return await this.redis.srem(key, value);
+  }
+  async scard(key: string) {
+    return await this.redis.scard(key);
+  }
+  async smembers(key: string) {
+    return await this.redis.smembers(key);
+  }
 }

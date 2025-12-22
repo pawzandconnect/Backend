@@ -49,14 +49,18 @@ export class FileService {
           this.validateFileType(file.mimetype);
           const isVideoFile = this.isVideo(file.mimetype);
           const uploadResult = await this.fileEntity.fileUpload(file);
+          console.log('Upload res', uploadResult);
           const persitFilePayload = {
             key: uploadResult.key,
             type: file.mimetype,
             url: uploadResult.Location,
             ...(user && { userId: user.id }),
           };
+
+          console.log('Data', persitFilePayload);
+
           // Persit file record
-          await this.saveFileRecord(persitFilePayload);
+          // await this.saveFileRecord(persitFilePayload);
 
           const data: FileMeta = {
             url: uploadResult.Location,

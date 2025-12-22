@@ -55,16 +55,7 @@ export class OwnerService {
       throw ExceptionFactory.badRequest('Owner ID is required.');
     }
 
-    const {
-      bio,
-      display_name,
-      location,
-      looking_for,
-      preferred_locations,
-      travel_radius,
-      latitude,
-      longitude,
-    } = dto;
+    const { bio, display_name, location, looking_for, travel_radius, latitude, longitude } = dto;
 
     if (!display_name) {
       throw ExceptionFactory.badRequest('Provide a display name');
@@ -88,6 +79,7 @@ export class OwnerService {
       );
     }
 
+    const { preferred_locations, ...rest } = dto;
     if (!preferred_locations || preferred_locations.length === 0) {
       throw ExceptionFactory.badRequest(
         'Select suitable locations you would prefer to met other pet owners',
@@ -95,7 +87,8 @@ export class OwnerService {
     }
 
     const finalPayload = {
-      ...dto,
+      ...rest,
+      looking_for: dto.looking_for,
       preferred_meetup_locations: preferred_locations,
       ...(longitude && { longitude: parseFloat(longitude) }),
       ...(latitude && { latitude: parseFloat(latitude) }),

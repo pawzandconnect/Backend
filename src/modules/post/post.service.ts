@@ -46,6 +46,26 @@ export class PostService {
     }
   }
 
+  async getPostById(dto: { post_id: string }) {
+    const { post_id } = dto;
+
+    if (!post_id || post_id.trim() === '') {
+      throw ExceptionFactory.badRequest('Post ID is missing');
+    }
+
+    try {
+      const post = await this.postRepo.findById(post_id);
+      if (!post) {
+        throw ExceptionFactory.notFound('Post not found');
+      }
+
+      return { message: 'Post fetched', data: post };
+    } catch (e) {
+      this.logger.log('An error occured while commenting on post', e.message);
+      ExceptionHandler.handle(e);
+    }
+  }
+
   async comment(dto: CommentOnPostDto, owner: AuthTokenClaim) {
     const { content, post_id } = dto;
     if (!content || content.trim() === '') {
@@ -223,6 +243,19 @@ export class PostService {
     }
   }
 
-  // async getComments() {}
-  // async getCommentReplies() {}
+  // async getComments(dto: { post_id: string }) {}
+  // async getCommentReplies(dto: { comment_id: string }) {
+  //   const { content, comment_id } = dto;
+  //   if (!content || content.trim() === '') {
+  //     throw ExceptionFactory.badRequest('Comment reply text is required');
+  //   }
+  //   if (!comment_id || comment_id.trim() === '') {
+  //     throw ExceptionFactory.badRequest('Comment ID is missing');
+  //   }
+
+  //   const comment = await this.postRepo.findCommentById(comment_id);
+  //   if (!comment) {
+  //     throw ExceptionFactory.notFound("Comment not found, can't reply to it");
+  //   }
+  // }
 }

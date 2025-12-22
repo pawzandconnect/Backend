@@ -81,6 +81,17 @@ enum VoteValue {
   down
 }
 
+enum ParticipantStatus {
+  requested
+  accepted
+  rejected
+}
+
+enum ConversationType {
+  direct
+  group
+}
+
 model File {
   id        String  @id @default(cuid())
   key       String
@@ -155,6 +166,7 @@ model Owner {
   longitude                  Float?
   latitude                   Float?
   city                       String?
+  location                   String?
   state                      String?
   zip_code                   String?
   country                    String?
@@ -444,9 +456,13 @@ model Conversation {
   participants ConversationParticipant[]
   messages     Message[]
 
+  type        ConversationType @default(direct)
+  pairing_key String?
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
+  @@unique([type, pairing_key])
   @@index([created_at])
   @@map("conversations")
 }
@@ -456,6 +472,8 @@ model ConversationParticipant {
 
   conversation_id String
   owner_id        String
+
+  status ParticipantStatus @default(requested)
 
   conversation Conversation @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
   owner        Owner        @relation(fields: [owner_id], references: [id], onDelete: Cascade)
@@ -468,6 +486,7 @@ model ConversationParticipant {
   joined_at    DateTime?
   last_read_at DateTime?
 
+  @@unique([conversation_id, owner_id])
   @@index([conversation_id, owner_id])
   @@map("conversation_participants")
 }
@@ -505,6 +524,7 @@ model MessageReceipt {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
+  @@unique([message_id, owner_id])
   @@index([message_id, owner_id])
   @@map("message_receipts")
 }

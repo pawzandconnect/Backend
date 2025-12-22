@@ -109,6 +109,9 @@ export class Helpers {
     }
     return a < b ? [a, b] : [b, a];
   }
+  static getConversationPairingKey(a: string, b: string): string {
+    return [a, b].sort().join(':');
+  }
   static getPostUpdateForTransition(from: VoteState, to: VoteState) {
     if (from === to) return null;
 

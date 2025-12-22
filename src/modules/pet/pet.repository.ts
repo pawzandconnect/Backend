@@ -56,8 +56,9 @@ export class PetRepository {
   // async delete(id) {}
 
   async upsert(id, data: PetProfile) {
+    const petID = id ?? 'random';
     return this.prisma.petProfile.upsert({
-      where: { id },
+      where: { id: petID },
       update: data,
       create: data,
     });

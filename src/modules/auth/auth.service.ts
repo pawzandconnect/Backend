@@ -104,6 +104,73 @@ export class AuthService {
     }
   }
 
+  async testSignin(dto: GoogleSignInDto) {
+    const { token } = dto;
+
+    if (!token || token.trim() === '') {
+      throw ExceptionFactory.badRequest('Email is required');
+    }
+
+    try {
+      const email = token.toLowerCase();
+      const owner = await this.prisma.owner.findUnique({
+        where: { email },
+        select: { email: true, id: true, pet_profile: { select: { id: true } } },
+      });
+
+      if (!owner) {
+        const newOwner = await this.prisma.owner.create({
+          data: {
+            email,
+            email_verified: true,
+            auth_provider: AuthProvider.apple,
+          },
+          select: {
+            email: true,
+            id: true,
+            pet_profile: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        });
+        const claim = this.constructAuthTokenClaim({
+          email: newOwner.email,
+          sub: newOwner.id,
+          ...(newOwner?.pet_profile && { pet_id: newOwner.pet_profile.id }),
+        });
+
+        const tokens = await this.generateTokensFromAuthClaim(claim);
+        const hydratedResponse: AuthResponse = {
+          ...tokens,
+          email: newOwner.email,
+          id: newOwner.id,
+          ...(newOwner?.pet_profile && { pet_id: newOwner.pet_profile.id }),
+        };
+        return { data: hydratedResponse };
+      } else {
+        const claim = this.constructAuthTokenClaim({
+          email: owner.email,
+          sub: owner.id,
+          ...(owner?.pet_profile && { pet_id: owner.pet_profile.id }),
+        });
+
+        const tokens = await this.generateTokensFromAuthClaim(claim);
+        const hydratedResponse: AuthResponse = {
+          ...tokens,
+          email: owner.email,
+          id: owner.id,
+          ...(owner?.pet_profile && { pet_id: owner.pet_profile.id }),
+        };
+        return { data: hydratedResponse };
+      }
+    } catch (e) {
+      this.logger.log('Failed to authenticate user', e);
+      ExceptionHandler.handle(e);
+    }
+  }
+
   async refreshAccessToken(dto: RefreshAccessTokenDto) {
     const { token } = dto;
 

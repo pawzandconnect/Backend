@@ -17,6 +17,14 @@ export class PostRepository {
   async findById(id) {
     return this.prisma.post.findUnique({
       where: { id },
+      include: {
+        author: {
+          select: {
+            name: true,
+            bio: true,
+          },
+        },
+      },
     });
   }
 

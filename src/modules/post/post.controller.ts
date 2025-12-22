@@ -1,12 +1,9 @@
-import { Body, Controller, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { PostService } from './post.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import {
   CommentOnPostDto,
   CreatePostDto,
-  LikeCommentDto,
-  LikeCommentReplyDto,
-  LikePostDto,
   ReactToCommentDto,
   ReactToPostDto,
   ReplyCommentDto,
@@ -43,13 +40,9 @@ export class PostController {
     return this.postService.comment({ post_id, ...dto }, owner);
   }
 
-  @Post(';id/like')
-  async handleLikePost(
-    @Param('id') post_id: string,
-    @Body() dto: LikePostDto,
-    @CurrentUser() owner: AuthTokenClaim,
-  ) {
-    return this.postService.likePost({ post_id, ...dto }, owner);
+  @Post(':id/like')
+  async handleLikePost(@Param('id') post_id: string, @CurrentUser() owner: AuthTokenClaim) {
+    return this.postService.likePost({ post_id }, owner);
   }
 
   @Post(':id/comments/:commentId/react')
@@ -64,10 +57,9 @@ export class PostController {
   @Post(':id/comments/:commentId/like')
   async handleLikeComment(
     @Param('commentId') comment_id: string,
-    @Body() dto: LikeCommentDto,
     @CurrentUser() owner: AuthTokenClaim,
   ) {
-    return this.postService.likeComment({ comment_id, ...dto }, owner);
+    return this.postService.likeComment({ comment_id }, owner);
   }
 
   @Post(':id/comments/:commentId/reply')
@@ -82,10 +74,9 @@ export class PostController {
   @Post(':id/comments/:commentId/replies/:replyId/like')
   async handleLikeCommentReply(
     @Param('replyId') comment_reply_id: string,
-    @Body() dto: LikeCommentReplyDto,
     @CurrentUser() owner: AuthTokenClaim,
   ) {
-    return this.postService.likeCommentReply({ comment_reply_id, ...dto }, owner);
+    return this.postService.likeCommentReply({ comment_reply_id }, owner);
   }
 
   @Post(':id/comments/:commentId/replies/:replyId/react')
@@ -97,13 +88,18 @@ export class PostController {
     return this.postService.reactToComment({ comment_reply_id, ...dto }, owner);
   }
 
+  @Get(':id')
+  async handleGetPostById(@Param('id') post_id: string) {
+    return this.postService.getPostById({ post_id });
+  }
+
   // @Get(':id/comments')
-  // async handleGetPostComments(@Query() dto) {
-  //   return this.postService.getComments();
+  // async handleGetPostComments(@Query() dto, @Param('id') post_id: string) {
+  //   return this.postService.getComments({ post_id });
   // }
 
   // @Get(':id/comments/:commentId/replies')
-  // async handleGetCommentReplies(@Query() dto) {
-  //   return this.postService.getCommentReplies();
+  // async handleGetCommentReplies(@Query() dto, @Param('commentId') comment_id: string) {
+  //   return this.postService.getCommentReplies({ comment_id });
   // }
 }
